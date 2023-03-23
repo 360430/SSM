@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!--TODO 太爽了 终于弄好了-->
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <!--样式表-->
+    <style>
+        .el-table .warning-row {
+            background: oldlace;
+        }
+
+        .el-table .success-row {
+            background: #f0f9eb;
+        }
+    </style>
+</head>
+<body>
+
+<div id="app">
+    <h1>图书管理</h1>
+    <!--TODO 上面的查询添加表单-->
+    <el-form :inline="true" :model="formInline" class="demo-form-inline">
+        <el-form-item label="图书名称">
+            <el-input v-model="formInline.name" placeholder="图书名称"></el-input>
+        </el-form-item>
+        <el-form-item>
+            <el-button type="primary" @click="getAll()">查询</el-button>
+        </el-form-item>
+        <el-form-item>
+            <el-button type="primary" @click="handleCreate()">添加</el-button>
+        </el-form-item>
+    </el-form>
+    <!-- TODO 表格-->
+    <template>
+        <el-table
+                :data="dataList"
+                style="width: 100%"
+                :row-class-name="tableRowClassName">
+
+<!-- TODO           这里的数据要和数据库中的字段名称一一对应才行 这里掉了个大坑-->
+
+            <el-table-column
+                    prop="id"
+                    label="序号"
+                    width="180">
+            </el-table-column>
+            <el-table-column
+                    prop="type"
+                    label="图书类别"
+                    width="180">
+            </el-table-column>
+            <el-table-column
+                    prop="name"
+                    label="图书名称">
+            </el-table-column>
+            <el-table-column
+                    prop="description"
+                    label="描述">
+            </el-table-column>
+            <el-table-column
+                    label="操作">
+                <template slot-scope="scope">
+                    <el-button
+                            size="mini"
+                            @click="handleEdit(scope.$index, scope.row)">编辑
+                    </el-button>
+                    <el-button
+                            size="mini"
+                            type="danger"
+                            @click="handleDelete(scope.$index, scope.row)">删除
+                    </el-button>
+                </template>
+            </el-table-column>
+        </el-table>
+    </template>
+    <!--TODO 添加对话框-->
+    <el-dialog
+            title="新增图书"
+            :visible.sync="dialogVisible"
+            width="30%"
+    >
+
+        <el-form ref="form" :model="formData" label-width="80px">
+            <el-form-item label="图书类别">
+                <el-input v-model="formData.type"></el-input>
+            </el-form-item>
+            <el-form-item label="图书名称">
+                <el-input v-model="formData.name"></el-input>
+            </el-form-item>
+            <el-form-item label="描述">
+                <el-input v-model="formData.description"></el-input>
+            </el-form-item>
+        </el-form>
+        <span slot="footer" class="dialog-footer">
+    <el-button @click="dialogVisible = false">取 消</el-button>
+    <el-button type="primary" @click="tianjia()">添加</el-button>
+  </span>
+    </el-dialog>
+    <!--TODO 修改对话框-->
+    <el-dialog
+            title="编辑检查项"
+            :visible.sync="dialogVisible2"
+            width="30%">
+
+        <el-form ref="form" :model="formData" label-width="80px">
+            <el-form-item label="图书类别">
+                <el-input v-model="formData.type"></el-input>
+            </el-form-item>
+            <el-form-item label="图书名称">
+                <el-input v-model="formData.name"></el-input>
+            </el-form-item>
+            <el-form-item label="描述">
+                <el-input v-model="formData.description"></el-input>
+            </el-form-item>
+        </el-form>
+        <span slot="footer" class="dialog-footer">
+    <el-button @click="dialogVisible2 = false">取 消</el-button>
+    <el-button type="primary" @click="xiugai()">确 定</el-button>
+  </span>
+    </el-dialog>
+
+</div>
+
+<script src="../js/vue.js"></script>
+<script src="../element-ui/lib/index.js"></script>
+<script src="../js/axios-0.18.0.js"></script>
+<link rel="stylesheet" href="../element-ui/lib/theme-chalk/index.css">
+
+<script>
+    new Vue({
+        el: '#app',
+        //TODO 数据
+        data() {
+            return {
+                //表格上面的小表单
+                formInline: {},
+                //表格
+                dataList: [],
+                //添加对话框
+                dialogVisible: false,
+                //编辑对话框
+                dialogVisible2: false,
+                //对话框表单数据
+                formData: {},
+
+            }
+        },
+        //TODO 方法
+        //页面初始化之后进行查询全部信息
+        created() {
+            this.getAll();
+        },
+        methods: {
+
+            //表格
+            tableRowClassName({row, rowIndex}) {
+                if (rowIndex === 1) {
+                    return 'warning-row';
+                } else if (rowIndex === 3) {
+                    return 'success-row';
+                }
+                return '';
+            },
+            //TODO 查询全部
+            getAll() {
+                axios.get("../books").then((res) => {
+                    this.dataList = res.data.data;
+                })
+            },
+            //TODO 添加
+            //添加的按钮
+            handleCreate(){
+                this.dialogVisible=true;
+                this.formData={};
+            },
+            //添加对话框的确定按钮
+            tianjia(){
+                axios.post("../books",this.formData).then((res)=>{
+                    if (200011===res.data.code){
+                        //弹出成功的提示信息
+                        this.$message.success("添加成功！")
+                        this.formData=res.data.data
+                        //关闭对话框
+                        this.dialogVisible=false;
+                        //重新查询表格信息
+                        this.getAll();
+                    }else if (200010===res.data.code){
+                        this.$message.error(res.data.msg)
+                    }else {
+                        this.$message.error("服务器异常,请稍后重试！")
+                    }
+                })
+            },
+            //TODO 编辑
+            //编辑的按钮
+            handleEdit(index, row) {
+                this.dialogVisible2 = true;
+                // this.formData={};
+                axios.get("../books/"+row.id).then((res)=>{
+                    if (res.data.code===200041){
+                        this.formData=res.data.data;
+                    }
+                    else {
+                        this.$message.error("该数据不能编辑 请不要执着于此")
+                    }
+                })
+
+            },
+            //修改编辑对话框的确定按钮
+            xiugai(){
+                axios.put("../books",this.formData).then((res)=>{
+                    //修改成功
+                    if (200031===res.data.code){
+                        //修改成功 将数据添加到表格中
+                        this.dataList=res.data.data;
+                        this.$message.success("修改成功")
+                        //重新查询全部 进行刷新效果
+                        this.getAll();
+                    }else if (res.data.data===200030){
+                        this.$message.error("修改失败 请重新尝试修改")
+                    }else {
+                        this.$message.error(res.data.msg)
+                    }
+                }).finally(()=>{
+                    this.dialogVisible2 = false;
+                })
+            },
+            //TODO 删除
+            //表单中删除按钮
+            handleDelete(index, row) {
+                this.$confirm('此操作将永久删除该文件, 是否继续?', '提示', {
+                    confirmButtonText: '确定',
+                    cancelButtonText: '取消',
+                    type: 'warning'
+                }).then(() => {
+                    //删除成功
+                    axios.delete("../books/"+row.id).then((res)=>{
+                        if (res.data.code===200021){
+                            //删除之后进行查询全部
+                            this.getAll();
+                            this.$message({
+                                type: 'success',
+                                message: '删除成功!'
+                            });
+                        }else {
+                            this.$message.error("删除失败");
+                        }
+                    })
+                }).catch(() => {
+                    this.$message({
+                        type: 'info',
+                        message: '已取消删除'
+                    });
+                })
+            }
+            },
+    })
+
+</script>
+</body>
+</html>
